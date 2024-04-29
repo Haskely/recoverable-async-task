@@ -1,0 +1,38 @@
+[project]
+name = "recoverable-async-task"
+description = "`recoverable-async-task` is a Python library that streamlines the handling of asynchronous tasks through its `RecoverableAsyncTask` class, with the added benefit of **supporting task checkpointing and resumption**. This feature ensures that tasks can pick up from where they left off in the event of unexpected failures."
+authors = [
+    { name = "Haskely", email = "Haskely@live.com" }
+]
+dependencies = [
+    "tqdm>=4.66.2",
+    "loguru>=0.7.2",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+dynamic = ["version"]
+
+[project.urls]
+"Homepage" = "https://github.com/Haskely/recoverable-async-task"
+"Bug Reports" = "https://github.com/Haskely/recoverable-async-task/issues"
+"Source" = "https://github.com/Haskely/recoverable-async-task"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pre-commit>=3.7.0",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+only-include = ["recoverable_async_task.py"]
+
+
+[tool.hatch.version]
+source = "vcs"
