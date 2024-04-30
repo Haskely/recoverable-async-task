@@ -12,7 +12,9 @@
 
 #   5. **Publish to TestPyPI**: If the tag complies with the PEP 440 specification but is not a final version, such as containing development versions or pre-release versions, the built distribution packages are published to TestPyPI. This step downloads the distribution packages and publishes them to TestPyPI. This step requires `PEP_0440_match` to be `true`.
 
-#   Before using this action, ensure to configure trusted-publishing for PyPI and TestPyPI as described in the [Packaging Python Projects documentation](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/#configuring-trusted-publishing).
+#   Before using this action, ensure to configure trusted-publishing for PyPI and TestPyPI
+#   as described in the [Packaging Python Projects documentation](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/#configuring-trusted-publishing).
+#   and modify the PYPI_PROJECT_NAME environment variable accordingly.
 
 # https://docs.github.com/zh/actions/using-workflows/workflow-syntax-for-github-actions
 
@@ -22,6 +24,9 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.*'
+
+env:
+  PYPI_PROJECT_NAME: recoverable-async-task
 
 jobs:
   check-tag:
@@ -79,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/recoverable-async-task
+      url: https://pypi.org/p/${{ env.PYPI_PROJECT_NAME }}
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
     steps:
@@ -155,7 +160,7 @@ jobs:
 
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/recoverable-async-task
+      url: https://test.pypi.org/p/${{ env.PYPI_PROJECT_NAME }}
 
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
