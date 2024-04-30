@@ -9,6 +9,24 @@ on:
       - 'v[0-9]+.[0-9]+.*'
 
 jobs:
+  check-tag:
+    name: Check Tag
+    if: github.ref_type == 'tag' # only publish to PyPI on tag pushes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Tag
+        id: check-tag
+        run: |
+          if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "PEP_0440_final_match=true" >> $GITHUB_OUTPUT
+          fi
+          if [[ ${{ github.event.ref }} =~ ^refs\/tags\/v([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$ ]]; then
+              echo "PEP_0440_match=true" >> $GITHUB_OUTPUT
+          fi
+    outputs:
+      PEP_0440_final_match: ${{ steps.check-tag.outputs.PEP_0440_final_match }}
+      PEP_0440_match: ${{ steps.check-tag.outputs.PEP_0440_match }}
+
   build:
     name: Build distribution 📦
     runs-on: ubuntu-latest
@@ -37,8 +55,9 @@ jobs:
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
-    if: github.ref_type == 'tag' # only publish to PyPI on tag pushes
+    if: needs.check-tag.outputs.PEP_0440_final_match == 'true'
     needs:
+      - check-tag
       - build
     runs-on: ubuntu-latest
     environment:
@@ -50,17 +69,20 @@ jobs:
       - name: Check Tag
         id: check-tag
         run: |
-          if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "match=true" >> $GITHUB_OUTPUT
+          if [[ ${{ github.event.ref }} =~ /^refs\/tags\/v(\d+\.\d+\.\d+)$/ ]]; then
+              echo "PEP_0440_final_match=true" >> $GITHUB_OUTPUT
+          fi
+          if [[ ${{ github.event.ref }} =~ /^refs\/tags\/v?(?:(\d+)!)?(\d+)(\.\d+)*((a|b|rc)\d+)?(\.post\d+)?(\.dev\d+)?(\+.+)?$/ ]]; then
+              echo "PEP_0440_match=true" >> $GITHUB_OUTPUT
           fi
       - name: Download all the dists
-        if: steps.check-tag.outputs.match == 'true'
+        if: steps.check-tag.outputs.PEP_0440_final_match == 'true'
         uses: actions/download-artifact@v3
         with:
           name: python-package-distributions
           path: dist/
       - name: Publish distribution 📦 to PyPI
-        if: steps.check-tag.outputs.match == 'true'
+        if: steps.check-tag.outputs.PEP_0440_final_match == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
 
   github-release:
@@ -108,8 +130,9 @@ jobs:
 
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
-    if: github.ref_type == 'tag'
+    if: needs.check-tag.outputs.PEP_0440_match == 'true'
     needs:
+      - check-tag
       - build
     runs-on: ubuntu-latest
 
