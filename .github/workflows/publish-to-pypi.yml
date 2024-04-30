@@ -1,4 +1,19 @@
-# https://docs.github.com/zh/actions/using-workflows/workflow-syntax-for-github-actions
+# File Explanation:
+
+#   This GitHub Actions workflow is designed to automate the process of publishing Python packages to PyPI and TestPyPI, triggered by tags, and executed only when pushing code with version tags. Here's the purpose of each step in the workflow:
+
+#   1. **Check Tag**: Verifies if the pushed tag complies with the PEP 440 versioning specification to determine whether it should be published to PyPI or TestPyPI. If the tag complies with the specification, it outputs the results indicating compliance.
+
+#   2. **Build distribution**: Builds binary wheels and source code tarballs of Python packages on an Ubuntu environment and stores the built distribution packages in the `dist/` directory.
+
+#   3. **Publish to PyPI**: If the tag represents a final version according to the PEP 440 specification, the built distribution packages are published to PyPI. This step downloads the distribution packages and publishes them to PyPI. This step requires `PEP_0440_final_match` to be `true`.
+
+#   4. **Sign the Python distribution with Sigstore and upload them to GitHub Release**: Signs the Python distribution packages with Sigstore and uploads them to GitHub Release. This step requires successful execution of the previous step to publish to PyPI and needs GitHub permissions for content writing. The signed distribution packages and certificates are uploaded as part of the release.
+
+#   5. **Publish to TestPyPI**: If the tag complies with the PEP 440 specification but is not a final version, such as containing development versions or pre-release versions, the built distribution packages are published to TestPyPI. This step downloads the distribution packages and publishes them to TestPyPI. This step requires `PEP_0440_match` to be `true`.
+
+#   Before using this action, ensure to configure trusted-publishing for PyPI and TestPyPI as described in the [Packaging Python Projects documentation](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/#configuring-trusted-publishing).
+
 # https://docs.github.com/zh/actions/using-workflows/workflow-syntax-for-github-actions
 
 name: Publish Python 🐍 distribution 📦 to PyPI
@@ -10,6 +25,8 @@ on:
 
 jobs:
   check-tag:
+    # https://stackoverflow.com/a/58869470/14140458
+    # https://packaging.python.org/en/latest/specifications/version-specifiers/#appendix-parsing-version-strings-with-regular-expressions
     name: Check Tag
     if: github.ref_type == 'tag' # only publish to PyPI on tag pushes
     runs-on: ubuntu-latest
