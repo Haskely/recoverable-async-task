@@ -12,10 +12,44 @@
 pip install recoverable-async-task
 ```
 
-`example.py`是一个简单示例，展示了如何利用`RecoverableAsyncTask`库来处理并发任务并进行断点续传：
+下面是一个简单示例，展示了如何利用`RecoverableAsyncTask`库来处理并发任务并进行断点续传：
 
-```bash
-python3 example.py
+```python
+import asyncio
+
+from recoverable_async_task import RecoverableAsyncTask
+
+
+async def main():
+    async def task(id: int | str):
+        import random
+
+        await asyncio.sleep(0.1)
+
+        if random.randint(1, 2) == 1:
+            raise Exception(f"Task {id=} failed!")
+
+        return {"id": id, "data": f"Task {id=} finished!"}
+
+    # 创建 RecoverableAsyncTask 实例
+    re_async_task = RecoverableAsyncTask(
+        task,
+        max_workers=10,
+        max_qps=10,
+        retry_n=3,
+        checkpoint_path_name="save-dir/my-example-task",
+    )
+
+    # 推送任务以并发处理
+    for i in range(100):
+        re_async_task.push(i)
+
+    # 收集并打印结果
+    async for result in re_async_task.collect_results():
+        print(result)
+
+
+asyncio.run(main())
 ```
 
 您可能会观察到，即使设置了`retry_n=3`，仍然会有任务因为随机原因失败。在这种情况下，您可以再次直接执行，任务将自动读取checkpoint文件，并从断点继续执行。您可以手动或通过编程方式重复此过程，直到所有任务成功完成。

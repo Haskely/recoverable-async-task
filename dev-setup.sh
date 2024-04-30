@@ -46,4 +46,4 @@ fi
 echo "SETUP: install pre-commit hooks"
 pre-commit install
 
-echo "Try running 'python async_task.py' to test your setup"
+echo "Try running 'python recoverable_async_task.py' to test your setup"
