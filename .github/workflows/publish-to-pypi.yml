@@ -88,23 +88,12 @@ jobs:
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
     steps:
-      - name: Check Tag
-        id: check-tag
-        run: |
-          if [[ ${{ github.event.ref }} =~ /^refs\/tags\/v(\d+\.\d+\.\d+)$/ ]]; then
-              echo "PEP_0440_final_match=true" >> $GITHUB_OUTPUT
-          fi
-          if [[ ${{ github.event.ref }} =~ /^refs\/tags\/v?(?:(\d+)!)?(\d+)(\.\d+)*((a|b|rc)\d+)?(\.post\d+)?(\.dev\d+)?(\+.+)?$/ ]]; then
-              echo "PEP_0440_match=true" >> $GITHUB_OUTPUT
-          fi
       - name: Download all the dists
-        if: steps.check-tag.outputs.PEP_0440_final_match == 'true'
         uses: actions/download-artifact@v3
         with:
           name: python-package-distributions
           path: dist/
       - name: Publish distribution 📦 to PyPI
-        if: steps.check-tag.outputs.PEP_0440_final_match == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
 
   github-release:
