@@ -21,7 +21,6 @@ JSON_ITEM = TypeVar("JSON_ITEM", bound=Union[str, int, float, bool, None])
 
 JSON = Union[JSON_ITEM, dict[str, "JSON"], list["JSON"]]
 
-
 T = TypeVar("T", bound=JSON)
 
 
@@ -149,19 +148,34 @@ class CheckpointData(TypedDict):
     data: JSON
 
 
+def json_default_serializer(o: JSON_ITEM):
+    logger.warning(
+        f"Object {str(o)} of type {o.__class__.__name__} is not JSON serializable"
+    )
+    return str(o)
+
+
 class Checkpoint:
     @staticmethod
     def load(checkpoint_path: str | Path) -> Iterator[CheckpointData]:
         logger.debug(f"load checkpoint from {checkpoint_path}")
         with Path(checkpoint_path).open() as f:
-            for line in f:
-                yield json.loads(line)
+            for ln, line in enumerate(f):
+                line = line.strip()
+                try:
+                    yield json.loads(line)
+                except json.JSONDecodeError as e:
+                    logger.warning(
+                        f'Failed to load checkpoint:\n  File "{checkpoint_path}", line {ln+1}\n    {line=}\n{e}'
+                    )
 
     @staticmethod
     def save_datas(save_path: str | Path, datas: JSON):
         logger.debug(f"save checkpoint to {save_path}")
         with (saved := Path(save_path)).open("w") as f:
-            json.dump(datas, f, ensure_ascii=False, indent=4)
+            json.dump(
+                datas, f, ensure_ascii=False, indent=4, default=json_default_serializer
+            )
 
         return saved
 
@@ -183,7 +197,12 @@ class Checkpoint:
         assert id not in self.datas, f"id {id} already exists"
         self.datas[id] = data
         with self.checkpoint_path.open("a") as f:
-            json.dump(CheckpointData(id=id, data=data), f, ensure_ascii=False)
+            json.dump(
+                CheckpointData(id=id, data=data),
+                f,
+                ensure_ascii=False,
+                default=json_default_serializer,
+            )
             f.write("\n")
 
     def save(self, save_path: str | Path | None = None):
