@@ -143,9 +143,12 @@ class AsyncTask(Generic[T]):
                     raise e
 
 
-class CheckpointData(TypedDict):
-    id: int | str
-    data: JSON
+ID_T = TypeVar("ID_T", bound=int | str)
+
+
+class CheckpointData(TypedDict, Generic[ID_T, T]):
+    id: ID_T
+    data: T
 
 
 def json_default_serializer(o: JSON_ITEM):
@@ -155,9 +158,9 @@ def json_default_serializer(o: JSON_ITEM):
     return str(o)
 
 
-class Checkpoint:
+class Checkpoint(Generic[ID_T, T]):
     @staticmethod
-    def load(checkpoint_path: str | Path) -> Iterator[CheckpointData]:
+    def load(checkpoint_path: str | Path) -> Iterator[CheckpointData[ID_T, T]]:
         logger.debug(f"load checkpoint from {checkpoint_path}")
         with Path(checkpoint_path).open() as f:
             for ln, line in enumerate(f):
@@ -187,13 +190,13 @@ class Checkpoint:
         self.checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.checkpoint_path.touch(exist_ok=True)
-        self.datas: dict[int | str, JSON] = {
+        self.datas: dict[ID_T, T] = {
             ckpt["id"]: ckpt["data"] for ckpt in self.load(self.checkpoint_path)
         }
 
         self.saved = None
 
-    def add(self, data: JSON, id: int | str):
+    def add(self, data: T, id: ID_T):
         assert id not in self.datas, f"id {id} already exists"
         self.datas[id] = data
         with self.checkpoint_path.open("a") as f:
@@ -215,9 +218,6 @@ class Checkpoint:
         )
 
         return self.saved
-
-
-ID_T = TypeVar("ID_T", bound=int | str)
 
 
 class RecoverableAsyncTask(AsyncTask, Generic[ID_T, T]):
@@ -282,7 +282,9 @@ class RecoverableAsyncTask(AsyncTask, Generic[ID_T, T]):
         - max_qps: Maximum queries per second limit. Default is 0 (no limit).
         - retry_n: Number of retries for failed tasks. Default is 3.
         """
-        self.checkpoint = Checkpoint(checkpoint_path_name or task_function.__name__)
+        self.checkpoint = Checkpoint[ID_T, T](
+            checkpoint_path_name or task_function.__name__
+        )
 
         @functools.wraps(task_function)
         async def _task_with_checkpoint(id: ID_T):
@@ -349,5 +351,7 @@ if __name__ == "__main__":
 
         async for result in re_async_task.collect_results():
             print(result)
+
+        print(f"Finished {len(re_async_task.checkpoint.datas)} tasks.")
 
     asyncio.run(main())
