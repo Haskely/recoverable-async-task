@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import json
+import sys
 import traceback
 from pathlib import Path
 from typing import (
@@ -9,13 +10,18 @@ from typing import (
     Coroutine,
     Generic,
     Iterator,
-    TypedDict,
     TypeVar,
     Union,
 )
 
 from loguru import logger
 from tqdm import tqdm
+
+if sys.version_info >= (3, 11):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict
+
 
 JSON_ITEM = TypeVar("JSON_ITEM", bound=Union[str, int, float, bool, None])
 
