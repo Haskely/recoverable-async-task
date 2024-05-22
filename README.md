@@ -59,5 +59,10 @@ You may notice that even with `retry_n=3` set, some tasks may still fail due to 
 If you wish to contribute to the `recoverable-async-task` library, please follow the setup instructions below to prepare your development environment:
 
 ```bash
-source dev-setup.sh
+source setup-env-rye.sh
 ```
+
+## plan
+
+[] Support custom progress bar statistics
+[] Supports passing in custom error handling logic

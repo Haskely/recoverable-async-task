@@ -59,5 +59,10 @@ asyncio.run(main())
 若您希望为`recoverable-async-task`库做出贡献，请按照以下指令进行环境设置：
 
 ```bash
-source dev-setup.sh
+source setup-env-rye.sh
 ```
+
+## 计划
+
+[] 支持自定义进度条统计信息
+[] 支持传入自定义错误处理逻辑
