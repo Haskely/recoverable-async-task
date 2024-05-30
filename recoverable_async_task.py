@@ -277,6 +277,7 @@ class RecoverableAsyncTask(AsyncTask, Generic[ID_T, T]):
         max_workers: int = 10,
         max_qps: float = 0,
         retry_n: int = 3,
+        raise_after_retry=False,
         checkpoint_path_name: str | None = None,
     ) -> None:
         """
@@ -298,7 +299,9 @@ class RecoverableAsyncTask(AsyncTask, Generic[ID_T, T]):
             self.checkpoint.add(result, id=id)
             return result
 
-        super().__init__(_task_with_checkpoint, max_workers, max_qps, retry_n)
+        super().__init__(
+            _task_with_checkpoint, max_workers, max_qps, retry_n, raise_after_retry
+        )
 
     def push(self, id: ID_T):
         """
