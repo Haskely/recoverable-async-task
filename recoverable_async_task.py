@@ -189,7 +189,8 @@ class Checkpoint(Generic[ID_T, T]):
         return saved
 
     def __init__(self, checkpoint_path_name: str) -> None:
-        self.name = checkpoint_path_name
+        self.checkpoint_path_name = checkpoint_path_name
+        self.name = Path(checkpoint_path_name).stem[:-100]
         self.checkpoint_path = Path(checkpoint_path_name).with_name(
             Path(checkpoint_path_name).stem + "-checkpoint.jsonl"
         )
@@ -217,8 +218,9 @@ class Checkpoint(Generic[ID_T, T]):
     def save(self, save_path: str | Path | None = None):
         self.saved = Checkpoint.save_datas(
             save_path
-            or Path(self.name).with_name(
-                Path(self.name).name + f"-results-{len(self.datas)}.json"
+            or Path(self.checkpoint_path_name).with_name(
+                Path(self.checkpoint_path_name).stem
+                + f"-results-{len(self.datas)}.json"
             ),
             list(self.datas.values()),
         )
