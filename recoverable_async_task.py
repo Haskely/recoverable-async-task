@@ -190,7 +190,7 @@ class Checkpoint(Generic[ID_T, T]):
 
     def __init__(self, checkpoint_path_name: str) -> None:
         self.checkpoint_path_name = checkpoint_path_name
-        self.name = Path(checkpoint_path_name).stem[:-100]
+        self.name = Path(checkpoint_path_name).stem[-100:]
         self.checkpoint_path = Path(checkpoint_path_name).with_name(
             Path(checkpoint_path_name).stem + "-checkpoint.jsonl"
         )
