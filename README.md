@@ -1,68 +1,88 @@
-# recoverable-async-task: An Asynchronous Task Processing Library
+# recoverable-async-task
 
-[中文文档](README_ZH.md) | [English](README.md)
+[English](README.md) | [中文文档](README_ZH.md)
 
-`recoverable-async-task` is a Python library that streamlines the handling of asynchronous tasks through its `RecoverableAsyncTask` class, with the added benefit of **supporting task checkpointing and resumption**. This feature ensures that tasks can pick up from where they left off in the event of unexpected failures.
+`recoverable-async-task` is a lightweight Python library that focuses on providing JSONL-based checkpoint recovery functionality for async tasks. It automatically records task execution states, allowing tasks to resume from where they left off after interruption, making it ideal for handling large-scale, time-consuming asynchronous tasks.
 
-## Quick Start Guide
-
-To install the library, use the following command:
+## Installation
 
 ```bash
 pip install recoverable-async-task
 ```
 
-The following is a simple illustration of how to utilize the `RecoverableAsyncTask` library to manage concurrent tasks and enable checkpointing and resumption:
+## Quick Start
+
+Here's a simple example demonstrating how to use the `make_recoverable` decorator to handle async tasks:
 
 ```python
 import asyncio
-
-from recoverable_async_task import RecoverableAsyncTask
+import random
+from recoverable_async_task import make_recoverable
 
 
 async def main():
-    async def task(id: int | str):
-        import random
-
+    @make_recoverable(
+        storage_path_name=".checkpoint/example-task",  # Checkpoint file storage path
+        raise_on_error=False,                         # Don't raise exceptions on task failure
+        show_progress=True,                           # Show progress bar
+        force_rerun=False,                            # Don't force rerun completed tasks
+    )
+    async def task(id: int) -> dict:
         await asyncio.sleep(0.1)
-
         if random.randint(1, 2) == 1:
             raise Exception(f"Task {id=} failed!")
-
         return {"id": id, "data": f"Task {id=} finished!"}
 
-    # 创建 RecoverableAsyncTask 实例
-    re_async_task = RecoverableAsyncTask(
-        task,
-        max_workers=10,
-        max_qps=10,
-        retry_n=3,
-        checkpoint_path_name="save-dir/my-example-task",
-    )
-
-    # 推送任务以并发处理
-    for i in range(100):
-        re_async_task.push(i)
-
-    # 收集并打印结果
-    async for result in re_async_task.collect_results():
+    # Execute tasks and collect results
+    task_ids = list(range(10))  # Create 10 test tasks
+    async for result in task.as_completed(task_ids):
         print(result)
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-You may notice that even with `retry_n=3` set, some tasks may still fail due to random issues. In such cases, you can simply execute the tasks again, and they will automatically read the checkpoint file and resume from where they were interrupted. You can repeat this process manually or programmatically until all tasks are successfully completed.
+## Configuration Parameters
 
-## Contributing Guidelines
+The `make_recoverable` decorator supports the following parameters:
 
-If you wish to contribute to the `recoverable-async-task` library, please follow the setup instructions below to prepare your development environment:
+- `storage_path_name`: str, optional
+  - Storage path for checkpoint files
+  - Defaults to the decorated function's name
+- `raise_on_error`: bool, defaults to True
+  - Controls whether to raise exceptions on task failure
+  - When False, skips failed tasks and continues execution
+- `show_progress`: bool, defaults to True
+  - Whether to display a progress bar
+  - Shows completed/total tasks count
+- `force_rerun`: bool, defaults to False
+  - Whether to force rerun completed tasks
+  - Useful for scenarios requiring recalculation
+
+## Checkpoint Recovery Mechanism
+
+When task execution fails:
+1. Successfully completed task states are saved in the checkpoint file
+2. When rerunning the program, completed tasks are automatically skipped
+3. Only previously failed or unexecuted tasks will be processed
+4. This process can be repeated until all tasks are completed
+
+## Concurrency Control
+
+This library focuses on providing checkpoint recovery functionality. For more powerful concurrency control features, we recommend using the [adaptio](https://github.com/Haskely/adaptio) library.
+
+## Development Guide
+
+This project uses [uv](https://docs.astral.sh/uv/#getting-started) for environment management:
 
 ```bash
-source setup-env-rye.sh
+# Install dependencies
+uv sync
+
+# Run tests
+pytest
+
+# Format code
+pre-commit run --all-files
 ```
-
-## plan
-
-[] Support custom progress bar statistics
-[] Supports passing in custom error handling logic
