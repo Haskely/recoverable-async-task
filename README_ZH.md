@@ -56,10 +56,10 @@ asyncio.run(main())
 
 ## 贡献指南
 
-若您希望为`recoverable-async-task`库做出贡献，请按照以下指令进行环境设置：
+本项目开发推荐使用 [uv](https://docs.astral.sh/uv/#getting-started) 工具管理环境，请先安装 uv，然后执行以下命令：
 
 ```bash
-source setup-env-rye.sh
+uv sync
 ```
 
 ## 计划
