@@ -57,7 +57,9 @@ class TaskStorage(Generic[ID_T, T]):
 
     def __init__(self, storage_path_name: str) -> None:
         self.storage_path_name = storage_path_name
-        self.name = Path(storage_path_name).stem[-100:]
+        self.name = storage_path_name
+        if len(self.name) > 80:
+            self.name = "..." + self.name[-80:]
         self.storage_path = Path(storage_path_name).with_name(
             Path(storage_path_name).stem + "-storage.jsonl"
         )
