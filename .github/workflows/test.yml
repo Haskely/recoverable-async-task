@@ -1,10 +1,12 @@
-name: Tests
+name: Test Package Installation and Basic Functions
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
+  # 当发布工作流触发时也运行测试
+  workflow_call:
 
 jobs:
   test:
@@ -15,15 +17,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+
+    - name: Install package and dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-asyncio
-        pip install -e .
+        pip install -e ".[dev]"
+
     - name: Run tests
       run: |
         pytest tests/ -v
