@@ -5,6 +5,12 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.2.1] - 2024-03-21
+
+### 改进
+
+- 限制 checkpoint 文件名长度最大为 80 字符，超出时会在前面添加"..."，以提高可读性并保持任务存储命名的一致性
+
 ## [0.2.0] - 2024-03-20
 
 ### 变更
@@ -34,5 +40,6 @@
 - 支持任务断点续传功能
 - 支持基础的并发控制和重试机制
 
+[0.2.1]: https://github.com/username/recoverable-async-task/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/username/recoverable-async-task/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/username/recoverable-async-task/releases/tag/v0.1.0
