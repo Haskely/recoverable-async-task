@@ -5,6 +5,13 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.2.2] - 2024-03-22
+
+### 改进
+
+- 为模块和类添加详细的文档字符串，提升代码可读性
+- 优化 GitHub Actions 测试工作流程，提升 CI/CD 流程的稳定性和效率
+
 ## [0.2.1] - 2024-03-21
 
 ### 改进
@@ -40,6 +47,7 @@
 - 支持任务断点续传功能
 - 支持基础的并发控制和重试机制
 
+[0.2.2]: https://github.com/username/recoverable-async-task/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/username/recoverable-async-task/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/username/recoverable-async-task/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/username/recoverable-async-task/releases/tag/v0.1.0

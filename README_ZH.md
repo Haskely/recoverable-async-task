@@ -86,3 +86,10 @@ pytest
 # 代码格式化
 pre-commit run --all-files
 ```
+
+### 发版前
+
+1. 查看变更 `git log vx.x.x...HEAD --oneline`
+2. 更新 `CHANGELOG.md`
+3. 设置 tag `git tag vx.x.x`
+4. 推送到远程 `git push origin vx.x.x`
