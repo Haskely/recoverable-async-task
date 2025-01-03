@@ -1,3 +1,8 @@
+"""
+This module provides functionality for creating recoverable asynchronous tasks with checkpoint storage.
+It allows tasks to be resumed from where they left off in case of interruption.
+"""
+
 import asyncio
 import functools
 import json
@@ -42,8 +47,30 @@ def json_default_serializer(o: JSON_ITEM):
 
 
 class TaskStorage(Generic[ID_T, T]):
+    """
+    A storage class that handles saving and loading task results to/from disk.
+
+    Args:
+        storage_path_name (str): Base path for the storage file.
+
+    Attributes:
+        storage_path_name (str): Original path name provided
+        name (str): Shortened name for display purposes
+        storage_path (Path): Path to the actual storage file
+        records (dict): Dictionary containing loaded records
+    """
+
     @staticmethod
     def load(storage_path: str | Path) -> Iterator[TaskRecord[ID_T, T]]:
+        """
+        Load task records from a storage file.
+
+        Args:
+            storage_path: Path to the storage file
+
+        Yields:
+            TaskRecord: Records containing task IDs and their results
+        """
         logger.debug(f"load checkpoint from {storage_path}")
         with Path(storage_path).open() as f:
             for ln, line in enumerate(f):
@@ -71,6 +98,13 @@ class TaskStorage(Generic[ID_T, T]):
         }
 
     def add(self, data: T, id: ID_T):
+        """
+        Add a new record to storage.
+
+        Args:
+            data: Task result data to store
+            id: Unique identifier for the task
+        """
         self.records[id] = data
         with self.storage_path.open("a") as f:
             json.dump(
@@ -82,6 +116,15 @@ class TaskStorage(Generic[ID_T, T]):
             f.write("\n")
 
     def export(self, save_path: str | Path | None = None):
+        """
+        Export all stored records to a JSON file.
+
+        Args:
+            save_path: Optional custom path for the export file
+
+        Returns:
+            Path: Path where the results were saved
+        """
         save_path = save_path or Path(self.storage_path_name).with_name(
             Path(self.storage_path_name).stem + f"-results-{len(self.records)}.json"
         )
@@ -102,6 +145,17 @@ TaskFunction = Callable[[ID_T], Coroutine[None, None, T]]
 
 
 class RecoverableTask(Generic[ID_T, T]):
+    """
+    A wrapper class that makes async tasks recoverable by storing their results.
+
+    Args:
+        task_function: The async function to make recoverable
+        storage: TaskStorage instance for storing results
+        raise_on_error: Whether to raise exceptions or log them
+        show_progress: Whether to show progress bar
+        force_rerun: Whether to rerun tasks even if results exist
+    """
+
     def __init__(
         self,
         task_function: TaskFunction[ID_T, T],
@@ -118,6 +172,15 @@ class RecoverableTask(Generic[ID_T, T]):
         functools.update_wrapper(self, task_function)
 
     async def __call__(self, id: ID_T) -> T:
+        """
+        Execute the task for a single ID.
+
+        Args:
+            id: Task identifier
+
+        Returns:
+            The task result
+        """
         if not self.force_rerun and id in self.storage.records:
             return self.storage.records[id]
 
@@ -126,6 +189,18 @@ class RecoverableTask(Generic[ID_T, T]):
         return result
 
     async def as_completed(self, id_list: list[ID_T]) -> AsyncIterator[T]:
+        """
+        Execute multiple tasks and yield results as they complete.
+
+        Args:
+            id_list: List of task identifiers to process
+
+        Yields:
+            Task results as they complete
+
+        Raises:
+            Exception: If raise_on_error is True and a task fails
+        """
         tasks: list[asyncio.Task[T]] = []
 
         if not self.force_rerun:
@@ -165,6 +240,25 @@ def make_recoverable(
     show_progress: bool = True,
     force_rerun: bool = False,
 ) -> Callable[[TaskFunction[ID_T, T]], RecoverableTask[ID_T, T]]:
+    """
+    Decorator factory that creates recoverable versions of async tasks.
+
+    Args:
+        storage_path_name: Base path for storing results
+        raise_on_error: Whether to raise exceptions from tasks
+        show_progress: Whether to show progress bar
+        force_rerun: Whether to rerun tasks even if results exist
+
+    Returns:
+        A decorator that wraps async functions into RecoverableTask instances
+
+    Example:
+        @make_recoverable(storage_path_name="tasks/mytask")
+        async def my_task(id: int) -> dict:
+            result = await process(id)
+            return result
+    """
+
     def decorator(task_function: TaskFunction[ID_T, T]) -> RecoverableTask[ID_T, T]:
         storage = TaskStorage[ID_T, T](storage_path_name or task_function.__name__)
         wrapper = RecoverableTask(
