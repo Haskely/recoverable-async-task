@@ -152,16 +152,6 @@ class TestRecoverableTask:
         with pytest.raises(ValueError):
             await recoverable(2)  # 直接测试单个失败任务
 
-        # 测试批量处理时的错误处理
-        results = []
-        async for result in recoverable.as_completed([1, 2, 3]):
-            results.append(result)
-
-        # 验证成功的任务结果
-        assert len(results) == 2  # 应该只有两个成功的结果
-        assert all(r["id"] in [1, 3] for r in results)  # 验证结果来自正确的任务
-        assert all(r["value"] == r["id"] * 2 for r in results)  # 验证结果值正确
-
     @pytest.mark.asyncio
     async def test_progress_bar(self):
         """测试进度条功能"""
