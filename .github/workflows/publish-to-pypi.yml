@@ -146,12 +146,16 @@ jobs:
           --repo '${{ github.repository }}'
           --notes "${{ steps.changelog.outputs.CHANGELOG }}"
 
+      - name: List dist directory
+        run: ls -la dist/
+
       - name: Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
-          inputs: >-
-            ./dist/*.tar.gz
-            ./dist/*.whl
+          inputs: |
+            $(find ./dist -name "*.tar.gz")
+            $(find ./dist -name "*.whl")
+
       - name: Upload artifact signatures to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
