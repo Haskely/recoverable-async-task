@@ -118,12 +118,25 @@ jobs:
         with:
           name: python-package-distributions
           path: dist/
-      - name: Sign the dists with Sigstore
-        uses: sigstore/gh-action-sigstore-python@v3.0.0
-        with:
-          inputs: >-
-            ./dist/*.tar.gz
-            ./dist/*.whl
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get CHANGELOG content
+        id: changelog
+        run: |
+          # 提取当前版本的 CHANGELOG 内容
+          # 假设 CHANGELOG.md 中的版本标题格式为 "## [x.y.z]"
+          VERSION=${GITHUB_REF#refs/tags/v}
+          CONTENT=$(awk -v ver="## [$VERSION]" '
+            $0 ~ ver {p=1;next}
+            /^## / {p=0}
+            p {print}
+          ' CHANGELOG.md)
+          # 将内容保存到输出变量中，处理多行字符串
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -131,7 +144,14 @@ jobs:
           gh release create
           '${{ github.ref_name }}'
           --repo '${{ github.repository }}'
-          --notes ""
+          --notes "${{ steps.changelog.outputs.CHANGELOG }}"
+
+      - name: Sign the dists with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: >-
+            ./dist/*.tar.gz
+            ./dist/*.whl
       - name: Upload artifact signatures to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
