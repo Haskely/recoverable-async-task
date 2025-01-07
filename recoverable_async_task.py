@@ -181,7 +181,8 @@ class RecoverableTask(Generic[ID_T, T]):
             return self.storage.records[id]
 
         result = await self.task_function(id)
-        self.storage.add(result, id=id)
+        if result is not None:
+            self.storage.add(result, id=id)
         return result
 
     async def as_completed(self, id_list: list[ID_T]) -> AsyncIterator[T]:
