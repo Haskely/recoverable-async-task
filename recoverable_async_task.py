@@ -196,12 +196,19 @@ class RecoverableTask(Generic[ID_T, T]):
             Task results as they complete
         """
         tasks: list[asyncio.Task[T]] = []
+        results_to_yield: list[T] = []
 
+        # 首先处理已缓存的结果
         if not self.force_rerun:
             for id in id_list:
                 if id in self.storage.records:
-                    yield self.storage.records[id]
+                    results_to_yield.append(self.storage.records[id])
 
+        # 先yield所有缓存的结果
+        for result in results_to_yield:
+            yield result
+
+        # 创建新任务
         for id in id_list:
             if self.force_rerun or id not in self.storage.records:
                 tasks.append(asyncio.create_task(self(id)))
@@ -210,15 +217,21 @@ class RecoverableTask(Generic[ID_T, T]):
             return
 
         with tqdm(
-            asyncio.as_completed(tasks),
-            total=len(id_list),
+            total=len(tasks),
             desc=f"Processing {self.storage.name}",
             disable=not self.show_progress,
             initial=len(id_list) - len(tasks),
         ) as pbar:
-            for completed_task in pbar:
-                result = await completed_task
-                yield result
+            # 一个一个处理任务，这样可以单独处理每个任务的错误
+            for task in tasks:
+                try:
+                    result = await task
+                    if result is not None:
+                        yield result
+                except Exception as e:
+                    logger.error(f"Task failed: {e}")
+                finally:
+                    pbar.update(1)
 
 
 def make_recoverable(

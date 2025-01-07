@@ -204,7 +204,7 @@ wheels = [
 
 [[package]]
 name = "recoverable-async-task"
-version = "0.1.10.dev3+g0c6a367.d20241221"
+version = "0.2.2.dev1+g8d93790"
 source = { editable = "." }
 dependencies = [
     { name = "loguru" },
