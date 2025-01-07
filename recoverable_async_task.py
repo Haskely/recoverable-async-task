@@ -7,7 +7,6 @@ import asyncio
 import functools
 import json
 import sys
-import traceback
 from collections.abc import AsyncIterator, Coroutine, Iterator
 from pathlib import Path
 from typing import (
@@ -151,7 +150,6 @@ class RecoverableTask(Generic[ID_T, T]):
     Args:
         task_function: The async function to make recoverable
         storage: TaskStorage instance for storing results
-        raise_on_error: Whether to raise exceptions or log them
         show_progress: Whether to show progress bar
         force_rerun: Whether to rerun tasks even if results exist
     """
@@ -160,13 +158,11 @@ class RecoverableTask(Generic[ID_T, T]):
         self,
         task_function: TaskFunction[ID_T, T],
         storage: TaskStorage[ID_T, T],
-        raise_on_error: bool = True,
         show_progress: bool = True,
         force_rerun: bool = False,
     ):
         self.task_function = task_function
         self.storage = storage
-        self.raise_on_error = raise_on_error
         self.show_progress = show_progress
         self.force_rerun = force_rerun
         functools.update_wrapper(self, task_function)
@@ -197,9 +193,6 @@ class RecoverableTask(Generic[ID_T, T]):
 
         Yields:
             Task results as they complete
-
-        Raises:
-            Exception: If raise_on_error is True and a task fails
         """
         tasks: list[asyncio.Task[T]] = []
 
@@ -223,20 +216,12 @@ class RecoverableTask(Generic[ID_T, T]):
             initial=len(id_list) - len(tasks),
         ) as pbar:
             for completed_task in pbar:
-                try:
-                    result = await completed_task
-                    yield result
-                except Exception as e:
-                    if self.raise_on_error:
-                        raise e
-                    else:
-                        logger.error(f"Task failed: {e}")
-                        logger.error(traceback.format_exc())
+                result = await completed_task
+                yield result
 
 
 def make_recoverable(
     storage_path_name: str | None = None,
-    raise_on_error: bool = True,
     show_progress: bool = True,
     force_rerun: bool = False,
 ) -> Callable[[TaskFunction[ID_T, T]], RecoverableTask[ID_T, T]]:
@@ -245,7 +230,6 @@ def make_recoverable(
 
     Args:
         storage_path_name: Base path for storing results
-        raise_on_error: Whether to raise exceptions from tasks
         show_progress: Whether to show progress bar
         force_rerun: Whether to rerun tasks even if results exist
 
@@ -261,9 +245,7 @@ def make_recoverable(
 
     def decorator(task_function: TaskFunction[ID_T, T]) -> RecoverableTask[ID_T, T]:
         storage = TaskStorage[ID_T, T](storage_path_name or task_function.__name__)
-        wrapper = RecoverableTask(
-            task_function, storage, raise_on_error, show_progress, force_rerun
-        )
+        wrapper = RecoverableTask(task_function, storage, show_progress, force_rerun)
         return wrapper
 
     return decorator
@@ -275,13 +257,16 @@ if __name__ == "__main__":
     async def main():
         @make_recoverable(
             storage_path_name=".test/test",
-            raise_on_error=False,
             show_progress=True,
             force_rerun=False,
         )
-        async def task(id: int) -> dict[str, int | float]:
+        async def task(id: int) -> dict[str, int | float] | None:
             await asyncio.sleep(random.random() * 10)
-            return {"id": id, "data": id / (id % 3)}
+            try:
+                return {"id": id, "data": id / (id % 3)}
+            except Exception as e:
+                logger.error(f"Task failed: {e}")
+                return None
 
         # 创建一测试用的 id 列表
         test_ids = list(range(1, 20))
