@@ -5,6 +5,14 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.2.4] - 2024-03-26
+
+### 改进
+
+- 重构 `RecoverableTask` 类，优化结果生成流程和任务完成状态处理
+- 增强错误处理机制，提供更稳定的任务恢复能力
+- 优化 GitHub Actions 发布工作流程，提升包发布的自动化程度
+
 ## [0.2.3] - 2024-03-25
 
 ### 变更
