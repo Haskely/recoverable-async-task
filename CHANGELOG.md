@@ -5,6 +5,13 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.2.3] - 2024-03-25
+
+### 变更
+
+- 移除 `raise_on_error` 参数及相关的错误处理逻辑，简化错误处理方式
+- 优化结果存储逻辑：只有当任务结果不为 `None` 时才将结果添加到存储中
+
 ## [0.2.2] - 2024-03-22
 
 ### 改进
@@ -47,6 +54,7 @@
 - 支持任务断点续传功能
 - 支持基础的并发控制和重试机制
 
+[0.2.3]: https://github.com/username/recoverable-async-task/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/username/recoverable-async-task/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/username/recoverable-async-task/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/username/recoverable-async-task/compare/v0.1.0...v0.2.0

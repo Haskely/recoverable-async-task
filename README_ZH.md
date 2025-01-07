@@ -23,15 +23,18 @@ from recoverable_async_task import make_recoverable
 async def main():
     @make_recoverable(
         storage_path_name=".checkpoint/example-task",  # checkpoint文件存储路径
-        raise_on_error=False,                         # 任务失败时不抛出异常
         show_progress=True,                           # 显示进度条
         force_rerun=False,                            # 不强制重新运行已完成的任务
     )
-    async def task(id: int) -> dict:
+    async def task(id: int) -> dict | None:
         await asyncio.sleep(0.1)
-        if random.randint(1, 2) == 1:
-            raise Exception(f"Task {id=} failed!")
-        return {"id": id, "data": f"Task {id=} finished!"}
+        try:
+            if random.randint(1, 2) == 1:
+                raise Exception(f"Task {id=} failed!")
+            return {"id": id, "data": f"Task {id=} finished!"}
+        except Exception as e:
+            print(f"错误: {e}")
+            return None
 
     # 执行任务并收集结果
     task_ids = list(range(10))  # 创建10个测试任务
@@ -50,9 +53,6 @@ if __name__ == "__main__":
 - `storage_path_name`: str, 可选
   - checkpoint文件的存储路径
   - 默认使用被装饰函数的名称
-- `raise_on_error`: bool, 默认True
-  - 控制任务失败时是否抛出异常
-  - 设为False时会跳过失败的任务继续执行
 - `show_progress`: bool, 默认True
   - 是否显示进度条
   - 进度条会显示已完成/总任务数

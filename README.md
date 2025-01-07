@@ -23,15 +23,18 @@ from recoverable_async_task import make_recoverable
 async def main():
     @make_recoverable(
         storage_path_name=".checkpoint/example-task",  # Checkpoint file storage path
-        raise_on_error=False,                         # Don't raise exceptions on task failure
         show_progress=True,                           # Show progress bar
         force_rerun=False,                            # Don't force rerun completed tasks
     )
-    async def task(id: int) -> dict:
+    async def task(id: int) -> dict | None:
         await asyncio.sleep(0.1)
-        if random.randint(1, 2) == 1:
-            raise Exception(f"Task {id=} failed!")
-        return {"id": id, "data": f"Task {id=} finished!"}
+        try:
+            if random.randint(1, 2) == 1:
+                raise Exception(f"Task {id=} failed!")
+            return {"id": id, "data": f"Task {id=} finished!"}
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
 
     # Execute tasks and collect results
     task_ids = list(range(10))  # Create 10 test tasks
@@ -50,9 +53,6 @@ The `make_recoverable` decorator supports the following parameters:
 - `storage_path_name`: str, optional
   - Storage path for checkpoint files
   - Defaults to the decorated function's name
-- `raise_on_error`: bool, defaults to True
-  - Controls whether to raise exceptions on task failure
-  - When False, skips failed tasks and continues execution
 - `show_progress`: bool, defaults to True
   - Whether to display a progress bar
   - Shows completed/total tasks count
